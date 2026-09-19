@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>운전 — 디스플레이 라인</title>
+  <link rel="stylesheet" href="/styles.css?v=14" />
+</head>
+<body class="app">
+  <header class="top">
+    <div class="brand">
+      <strong>디스플레이 라인</strong>
+      <nav>
+        <a class="active" href="/">운전</a>
+        <a href="/mes.html">생산</a>
+        <a href="/lots.html">작업</a>
+        <a href="/alarms.html">알람</a>
+        <a href="/traceability.html">지나온 길</a>
+        <a href="/guide.html">설명</a>
+      </nav>
+    </div>
+    <div id="demoButtons" class="demo"></div>
+    <div class="kpis" id="closeout"></div>
+  </header>
+  <p class="strip" id="scenarioHint"></p>
+  <p class="strip muted" id="blocked"></p>
+
+  <div class="shell">
+    <section class="board">
+      <div class="fab">
+        <div class="fab-legend">
+          <span class="lg RUN">가동</span>
+          <span class="lg IDLE">대기</span>
+          <span class="lg STOP">정지</span>
+          <span class="lg MAINTENANCE">정비</span>
+          <span class="lg OFFLINE">끊김</span>
+        </div>
+
+        <div class="fab-flow">
+          <aside class="dock wait-dock">
+            <h3>대기</h3>
+            <div class="tokens" id="waitTokens"></div>
+          </aside>
+          <article class="chamber" data-eq="LOAD-01"></article>
+          <div class="belt" aria-hidden="true"><span></span></div>
+
+          <div class="fork">
+            <div class="lane oled">
+              <div class="lane-tag">올레드</div>
+              <div class="product-sample">
+                <div class="panel-face oled-face"></div>
+                <span>올레드</span>
+              </div>
+              <article class="chamber" data-eq="CLEAN-01"></article>
+              <div class="belt"><span></span></div>
+              <div class="cluster">
+                <div class="cluster-tag">증착</div>
+                <article class="chamber" data-eq="PROC-01"></article>
+                <article class="chamber" data-eq="PROC-02"></article>
+              </div>
+              <div class="belt"><span></span></div>
+              <article class="chamber" data-eq="ENC-01"></article>
+            </div>
+            <div class="lane lcd">
+              <div class="lane-tag">엘시디</div>
+              <div class="product-sample">
+                <div class="panel-face lcd-face"></div>
+                <span>엘시디</span>
+              </div>
+              <article class="chamber" data-eq="PI-01"></article>
+              <div class="belt"><span></span></div>
+              <article class="chamber" data-eq="LCD-01"></article>
+            </div>
+          </div>
+
+          <div class="belt"><span></span></div>
+          <article class="chamber" data-eq="INSPECT-01"></article>
+          <div class="belt out"><span></span></div>
+          <aside class="dock" id="doneDock">
+            <h3>출고</h3>
+            <div class="tokens" id="doneTokens"></div>
+          </aside>
+        </div>
+      </div>
+      <div class="wip-steps" id="wip"></div>
+    </section>
+
+    <aside class="side">
+      <div class="tabs" id="sideTabs">
+        <button type="button" data-tab="hold" class="on">멈춤</button>
+        <button type="button" data-tab="alarm">알람</button>
+        <button type="button" data-tab="more">더보기</button>
+      </div>
+      <div class="pane on" id="pane-hold">
+        <div id="holdCards"></div>
+        <p id="diagOut" class="hint"></p>
+      </div>
+      <div class="pane" id="pane-alarm">
+        <div id="alarmCards"></div>
+      </div>
+      <div class="pane" id="pane-more">
+        <form id="woForm" class="bar">
+          <label>제품
+            <select id="woProduct">
+              <option value="OLED">올레드</option>
+              <option value="LCD">엘시디</option>
+            </select>
+          </label>
+          <label>조건
+            <select id="woRecipe">
+              <option value="RCP-OLED-A01">올레드 가</option>
+              <option value="RCP-OLED-B01">올레드 나</option>
+              <option value="RCP-LCD-C01">엘시디 다</option>
+            </select>
+          </label>
+          <label>장수 <input id="woQty" type="number" min="1" max="10" value="3" /></label>
+          <button type="submit">넣기</button>
+          <button type="button" id="woRun">돌리기</button>
+        </form>
+        <p id="woOut" class="hint"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>지시</th>
+                <th>제품</th>
+                <th>장수</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="woRows"></tbody>
+          </table>
+        </div>
+        <p class="hint">장애</p>
+        <p id="scenarioButtons"></p>
+        <pre id="scenarioOut" class="hidden"></pre>
+        <form id="cmdForm" class="bar">
+          <label>명령
+            <select id="cmdType">
+              <option value="HOLD_LOT">멈추기</option>
+              <option value="RELEASE_LOT">다시 보내기</option>
+              <option value="START">켜기</option>
+              <option value="STOP">끄기</option>
+              <option value="SELECT_RECIPE">조건 맞추기</option>
+              <option value="MAINT_ENTER">정비 시작</option>
+              <option value="MAINT_EXIT">정비 끝</option>
+              <option value="ACK_ALARM">알람 봤음</option>
+              <option value="SCRAP_PANEL">버리기</option>
+            </select>
+          </label>
+          <input id="cmdLot" placeholder="작업" />
+          <input id="cmdEq" placeholder="기계" />
+          <input id="cmdRecipe" placeholder="조건" />
+          <input id="cmdAlarm" placeholder="알람" />
+          <input id="cmdPanel" placeholder="유리" />
+          <button type="submit">보내기</button>
+        </form>
+        <p id="cmdResult" class="hint"></p>
+        <form id="replayForm" class="bar">
+          <input id="replaySrc" value="PNL-00001" />
+          <input id="replayLot" value="LOT-20260918-001" />
+          <input id="replayDst" value="PNL-00005" />
+          <button type="button" id="replayExport">꺼내기</button>
+          <button type="submit">다시 넣기</button>
+        </form>
+        <p id="replayOut" class="hint"></p>
+        <ol id="feed"></ol>
+        <ol id="cmdFeed"></ol>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>작업</th>
+                <th>상태</th>
+                <th>다음</th>
+              </tr>
+            </thead>
+            <tbody id="lotRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="hidden">
+    <div id="kpis"></div>
+    <p id="routes"></p>
+    <p id="production"></p>
+    <p id="toolYield"></p>
+    <div id="oledCards"></div>
+    <div id="lcdCards"></div>
+    <div id="commonCards"></div>
+  </div>
+  <script src="/app.js?v=14"></script>
+  <script>
+    startOpsConsole();
+    document.getElementById("sideTabs").addEventListener("click", function (ev) {
+      const btn = ev.target.closest("button");
+      if (!btn) return;
+      document.querySelectorAll("#sideTabs button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+      document.querySelectorAll(".pane").forEach(function (p) { p.classList.toggle("on", p.id === "pane-" + btn.getAttribute("data-tab")); });
+    });
+  </script>
+</body>
+</html>

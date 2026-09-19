@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>알람 — 디스플레이 라인</title>
+  <link rel="stylesheet" href="/styles.css?v=14" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <strong>디스플레이 라인</strong>
+      <nav>
+        <a href="/">운전</a>
+        <a href="/mes.html">생산</a>
+        <a href="/lots.html">작업</a>
+        <a class="active" href="/alarms.html">알람</a>
+        <a href="/traceability.html">지나온 길</a>
+        <a href="/guide.html">설명</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page-main">
+    <h2>라인에서 막힌 것</h2>
+    <p class="hint">어느 챔버에서 줄이 끊겼는지, 유리가 잘못된 칸에 들어갔는지 봅니다.</p>
+    <div id="alarmLine" class="mini-line"></div>
+    <h2>측정값 이상 점수</h2>
+    <p class="hint" id="anomalyNote"></p>
+    <table>
+      <thead>
+        <tr><th>기계</th><th>표본</th><th>온도</th><th>시그마</th><th>압력</th><th>시그마</th><th>판단</th></tr>
+      </thead>
+      <tbody id="anomalyRows"></tbody>
+    </table>
+    <h2>알람 목록</h2>
+    <div id="alarmList" class="cards"></div>
+  </main>
+  <script src="/app.js?v=14"></script>
+  <script>startAlarmMonitor();</script>
+</body>
+</html>

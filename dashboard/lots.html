@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>작업 — 디스플레이 라인</title>
+  <link rel="stylesheet" href="/styles.css?v=14" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <strong>디스플레이 라인</strong>
+      <nav>
+        <a href="/">운전</a>
+        <a href="/mes.html">생산</a>
+        <a class="active" href="/lots.html">작업</a>
+        <a href="/alarms.html">알람</a>
+        <a href="/traceability.html">지나온 길</a>
+        <a href="/guide.html">설명</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page-main">
+    <h2>라인 위 카세트</h2>
+    <p class="hint">작업이 지금 어느 공정에 있는지 고르면, 아래 카세트 칸이 열립니다.</p>
+    <div id="lotBoard" class="lot-board"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>작업묶음</th>
+          <th>카세트</th>
+          <th>제품</th>
+          <th>지금 공정</th>
+          <th>상태</th>
+          <th>설비</th>
+          <th>조건</th>
+          <th>장수</th>
+          <th>보류 이유</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <h2>카세트 칸</h2>
+    <p class="hint">상자 안 몇 번 칸에 유리가 있고, 마지막에 어느 설비를 지났는지 봅니다.</p>
+    <form id="slotForm" class="bar">
+      <label>작업묶음 <input id="slotLot" value="LOT-20260918-001" /></label>
+      <button type="submit">조회</button>
+    </form>
+    <div id="cassetteWells" class="cassette-rack"></div>
+    <div id="travelerPath" class="path-line"></div>
+    <pre id="slotOut" class="hidden"></pre>
+  </main>
+  <script src="/app.js?v=14"></script>
+  <script>
+    startLotMonitor();
+    startSlotMap();
+  </script>
+</body>
+</html>

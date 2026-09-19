@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>지나온 길 — 디스플레이 라인</title>
+  <link rel="stylesheet" href="/styles.css?v=14" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <strong>디스플레이 라인</strong>
+      <nav>
+        <a href="/">운전</a>
+        <a href="/mes.html">생산</a>
+        <a href="/lots.html">작업</a>
+        <a href="/alarms.html">알람</a>
+        <a class="active" href="/traceability.html">지나온 길</a>
+        <a href="/guide.html">설명</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page-main">
+    <h2>유리가 지나온 공정</h2>
+    <p class="hint">한 장이 어느 챔버를 어떤 조건으로 거쳤는지 시간 순입니다.</p>
+    <form id="search" class="bar">
+      <label>유리 번호
+        <input id="panelId" value="PNL-00001" />
+      </label>
+      <button type="submit">조회</button>
+    </form>
+    <div id="glassPath" class="path-line"></div>
+    <ol id="timeline"></ol>
+    <p id="empty" class="hint"></p>
+  </main>
+  <script src="/app.js?v=14"></script>
+  <script>startTraceability();</script>
+</body>
+</html>

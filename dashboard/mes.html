@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>생산 — 디스플레이 라인</title>
+  <link rel="stylesheet" href="/styles.css?v=14" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <strong>디스플레이 라인</strong>
+      <nav>
+        <a href="/">운전</a>
+        <a class="active" href="/mes.html">생산</a>
+        <a href="/lots.html">작업</a>
+        <a href="/alarms.html">알람</a>
+        <a href="/traceability.html">지나온 길</a>
+        <a href="/guide.html">설명</a>
+      </nav>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </header>
+  <main class="mes page-main">
+    <p class="glossary" id="note"></p>
+    <h2>라인 재공</h2>
+    <div id="mesLine" class="mini-line"></div>
+    <div class="mes-grid">
+      <section>
+        <h2>1. 오늘 지시</h2>
+        <p class="hint">무엇을 몇 장 돌리라고 했는지.</p>
+        <table>
+          <thead>
+            <tr><th>지시</th><th>제품</th><th>진행</th><th>상태</th></tr>
+          </thead>
+          <tbody id="orders"></tbody>
+        </table>
+      </section>
+      <section>
+        <h2>2. 재공 — 지금 어디</h2>
+        <p class="hint">카세트가 길을 얼마나 갔는지.</p>
+        <div id="lots"></div>
+      </section>
+      <section>
+        <h2>3. 설비</h2>
+        <p class="hint">켜짐 · 줄 · 지금 들어 있는 작업.</p>
+        <table>
+          <thead>
+            <tr><th>기계</th><th>상태</th><th>줄</th><th>작업</th></tr>
+          </thead>
+          <tbody id="eq"></tbody>
+        </table>
+      </section>
+      <section>
+        <h2>4. 품질 · 멈춤</h2>
+        <p class="hint">불량과 보류.</p>
+        <div id="holds"></div>
+      </section>
+      <section>
+        <h2>5. 설비 종합효율 (OEE)</h2>
+        <p class="hint">가동률 × 성능 × 품질. 계획시간과 이론 사이클은 이 시스템이 정한 기준이다.</p>
+        <div class="kpis" id="oeeKpis"></div>
+        <p class="hint" id="oeeNote"></p>
+        <table>
+          <thead>
+            <tr><th>기계</th><th>처리</th><th>정지(초)</th><th>가동률</th><th>성능</th><th>품질</th><th>OEE</th></tr>
+          </thead>
+          <tbody id="oeeRows"></tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+  <script src="/app.js?v=14"></script>
+  <script>startMesBoard();</script>
+</body>
+</html>

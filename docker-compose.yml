@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: displayfab-postgres
+    environment:
+      POSTGRES_USER: displayfab
+      POSTGRES_PASSWORD: displayfab
+      POSTGRES_DB: displayfab
+    ports:
+      - "5435:5432"
+    volumes:
+      - displayfab_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U displayfab -d displayfab"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  displayfab_pgdata:
