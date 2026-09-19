@@ -170,36 +170,51 @@ PostgreSQL + SQLAlchemy. 호스트 운영 DB다. pytest는 인메모리 SQLite�
 
 ### 4.1 테이블
 
-**equipment**
+테이블 12개다. `backend/app/models.py`가 원본이고, 이 문서가 그 요약이다.
+
+```text
+마스터    equipment  recipe
+생산      work_order  lot  panel
+이력      process_event  sensor_reading  telemetry
+운전      equipment_downtime  alarm  host_command
+감사      event_log  state_change
+```
+
+**equipment** — 설비 마스터. 상태와 통신을 분리해서 들고 있다.
 - id (PK, 예: PROC-01)
-- name
-- process_step
-- equipment_status
-- connection_status
-- current_lot_id (nullable)
-- current_recipe_id (nullable)
-- last_seen_at (nullable)
+- name / process_step / product_scope (OLED·LCD·공용)
+- equipment_status (IDLE/RUN/STOP/ERROR/MAINTENANCE)
+- connection_status (ONLINE/OFFLINE)
+- current_lot_id / current_recipe_id / last_seen_at (nullable)
+- interface_type (simulator / opcua / modbus), interface_endpoint (nullable)
 
 **recipe**
 - id (PK, 예: RCP-OLED-A01)
-- name
+- name / product_type
 - expected_temperature_min / max
 - expected_pressure_min / max
 
 > 임계값은 실제 OLED 제조사양이 아니다. `config`의 학습용 범위다.
 
-**lot**
-- id (PK)
-- expected_recipe_id (FK recipe.id)
-- status
-- current_equipment_id (nullable)
-- current_step (nullable)
-- hold_reason (nullable)
+**work_order** — 무엇을 몇 장 돌리라는 지시.
+- id (PK, 예: WO-20260919-001)
+- product_type / recipe_id (FK) / qty
+- status (RELEASED / 투입됨 / 끝)
+- lot_id / cassette_id (nullable — 투입 전에는 없다)
+- created_at
 
-**panel**
+**lot** — 작업 묶음. 실제 라인의 Cassette 단위에 해당한다.
+- id (PK)
+- cassette_id / product_type
+- expected_recipe_id (FK recipe.id)
+- status (WAIT / PROCESSING / HOLD / COMPLETE)
+- current_equipment_id / current_step / hold_reason (nullable)
+
+**panel** — 유리 한 장. 카세트 안의 슬롯 하나다.
 - id (PK)
 - lot_id (FK lot.id)
-- status
+- slot_no
+- status (WAIT / PROCESSING / COMPLETE / FAIL / SCRAP)
 
 **process_event**
 - id (PK, integer)
@@ -216,13 +231,34 @@ PostgreSQL + SQLAlchemy. 호스트 운영 DB다. pytest는 인메모리 SQLite�
 - received_at
 - inspect_result (nullable, PASS/FAIL)
 
-**sensor_reading**
+**sensor_reading** — 실적 한 건에 붙는 측정값 한 점. 실적과 1:1이다.
 - id (PK)
 - process_event_id (FK, unique)
 - equipment_id
 - chamber_temperature
 - vacuum_pressure
 - recorded_at
+
+**telemetry** — 인터페이스 계층이 받은 시계열. 실적이 없는 생존신호도 여기 남는다.
+- id (PK)
+- equipment_id (FK)
+- source (HEARTBEAT / PROCESS)
+- interface_type
+- chamber_temperature / vacuum_pressure / equipment_status (nullable)
+- recorded_at
+- event_id (nullable)
+
+> `sensor_reading`과 나눈 이유: 실적에 붙는 한 점과, 설비가 올리는 시계열은
+> 다른 질문에 답한다. 이상 점수는 `telemetry`를 보고, 공정 이력 추적은
+> `sensor_reading`을 본다. 실제 라인에서는 측정값이 실적보다 훨씬 자주 쌓인다.
+
+**equipment_downtime** — 정지 구간. OEE 가동률의 재료다.
+- id (PK)
+- equipment_id (FK)
+- reason (COMMUNICATION_LOSS / STOP / MAINTENANCE / ERROR)
+- started_at
+- ended_at / duration_sec (nullable — 아직 안 끝난 구간은 열려 있다)
+- event_id (nullable)
 
 **alarm**
 - id (PK)
@@ -235,7 +271,31 @@ PostgreSQL + SQLAlchemy. 호스트 운영 DB다. pytest는 인메모리 SQLite�
 - severity
 - message
 - occurred_at
-- resolved_at (nullable)
+- resolved_at / acknowledged_at / acknowledged_by (nullable)
+
+**host_command** — 사람이 낸 명령과 그 처리 결과.
+- id (PK), command_id (unique)
+- command_type (START / STOP / SELECT_RECIPE / HOLD_LOT / RELEASE_LOT /
+  MAINT_ENTER / MAINT_EXIT / ACK_ALARM / SCRAP_PANEL)
+- status (ACCEPTED / REJECTED / COMPLETED)
+- equipment_id / lot_id / alarm_id (nullable)
+- message / requested_by / created_at
+- interface_type / delivered_at (nullable — 어떤 어댑터로 언제 내려갔는지)
+
+**event_log** — 들어온 이벤트 한 건의 판정 기록. 거절된 것도 남는다.
+- id (PK), event_id, request_id
+- event_type / accepted / reason (nullable)
+- equipment_id / lot_id / panel_id / process_step (nullable)
+- summary / created_at
+
+> 거절된 이벤트를 버리지 않는 이유: "이력이 없다"는 신고의 대부분이 전송 실패가
+> 아니라 검증 거절이다. 무엇이 왜 거절됐는지가 남아야 추적이 끝난다.
+
+**state_change** — 설비·작업·유리의 상태 전이 이력.
+- id (PK)
+- entity_type (EQUIPMENT / LOT / PANEL), entity_id
+- from_status (nullable) / to_status / reason
+- event_id (nullable) / changed_at
 
 ### 4.2 INDEX
 
@@ -406,32 +466,39 @@ message: Expected RCP-OLED-A01 but received RCP-OLED-B01
 ## 9. 폴더 구조
 
 ```
-display-ops-practice/
-├── ARCHITECTURE.md          ← 이 문서 (설계)
-├── README.md
-├── TROUBLESHOOTING.md
-├── INTERVIEW_NOTES.md       ← 개념 메모 (선택)
+displayfab-smart-factory/
+├── README.md                ← 처음 읽는 문서
+├── ARCHITECTURE.md          ← 이 문서 (설계·스키마·API)
+├── ARCHITECTURE_LAYERS.md   ← 스마트팩토리 계층별 구현 상태
+├── TROUBLESHOOTING.md       ← 장애 사례별 추적 순서
+├── INTERVIEW_NOTES.md       ← 기술 질문 18개
 ├── SQL_PRACTICE.md
-├── .gitignore
-├── config/
-│   └── settings.py          ← 학습용 임계값 (실제 스펙 아님)
+├── docker-compose.yml       ← PostgreSQL
+├── .env.example             ← DISPLAYFAB_* 설정
 ├── backend/
 │   ├── requirements.txt
 │   ├── app/
 │   │   ├── main.py
-│   │   ├── database.py
+│   │   ├── config.py        ← 학습용 임계값 (실제 스펙 아님)
+│   │   ├── database.py      ← PostgreSQL / 테스트용 SQLite 분기
 │   │   ├── enums.py         ← 상태값 단일 출처
 │   │   ├── logging_setup.py
-│   │   ├── models.py
+│   │   ├── models.py        ← 테이블 12개
 │   │   ├── schemas.py
-│   │   ├── seed.py
+│   │   ├── seed.py          ← 설비 8대 · 조건 3개 · 작업 3건
 │   │   ├── api/             ← HTTP 입구
-│   │   └── services/        ← 검증/Alarm/상태/Offline
-│   └── tests/
+│   │   ├── services/        ← 수집·검증·알람·MES·OEE·이상점수
+│   │   ├── adapters/        ← 설비 통신 (시뮬레이터 / OPC UA·Modbus 미구현)
+│   │   └── domain/          ← 공정 경로와 인터록 규칙
+│   ├── tests/               ← pytest 85건
+│   └── scripts/             ← 시연 검증, 화면 촬영
 ├── simulator/
 │   └── python_simulator.py
-├── csharp_simulator/        ← PHASE 16
-├── dashboard/               ← 4화면, 디자인 최소화
+├── csharp_simulator/        ← C# 설비 클라이언트 (.NET 8)
+├── dashboard/               ← 관제 화면 5개 + 설명 화면
+├── analytics/               ← OEE · 이상탐지 설계 문서
+├── docs/images/             ← README 스크린샷
+├── replay/                  ← 이벤트 다시 넣기용 샘플
 └── sql/
     └── interview_queries.sql
 ```
@@ -465,3 +532,69 @@ MVP에 넣지 않는 것: Kafka, Kubernetes, Microservice, Event Bus, 딥러닝,
 
 구현 원칙: 한 Phase의 입구와 출구를 로그로 증명한다.
 거대 시스템이 아니라, 데이터가 이동하는 길을 직접 돌려보는 것이 목표다.
+
+이 표는 처음 세운 계획이고 전부 끝났다. 이후에 인터페이스 어댑터, telemetry·정지구간
+테이블, PostgreSQL 이전, OEE, 이상 점수가 더 붙었다. 지금 남은 일은
+`ARCHITECTURE_LAYERS.md` 맨 아래 TODO에 있다.
+
+---
+
+## 11. API 목록
+
+`GET /docs` 로 열면 FastAPI가 만든 문서를 그대로 볼 수 있다. 여기는 요약이다.
+
+### 설비가 호스트로 (현장 → 시스템)
+
+| API | 하는 일 |
+|---|---|
+| `POST /api/events` | 실적(PROCESS)과 생존신호(HEARTBEAT) 한 건. 모든 수집의 단일 입구 |
+
+### 사람이 호스트로 (관제 → 시스템)
+
+| API | 하는 일 |
+|---|---|
+| `POST /api/commands` | 켜기·끄기·조건·보류·해제·정비·알람확인·유리폐기 |
+| `POST /api/work-orders` | 작업지시 생성 (제품·수량) |
+| `POST /api/lab/run-order/{id}` | 지시 한 건을 라인 끝까지 실행 (화면의 `돌리기`) |
+| `POST /api/lab/scenarios/{id}/run` | 시연 시나리오 실행 (불량·끊김·조건 틀림 등) |
+| `POST /api/lab/replay` | 꺼낸 이벤트를 다시 넣기 |
+
+### 화면이 읽는 것 (시스템 → 관제)
+
+| API | 하는 일 |
+|---|---|
+| `GET /api/health` | 서버·DB 상태, 온라인/오프라인 설비 수 |
+| `GET /api/equipment` | 설비 목록. 상태·연결·조건·미해결 알람 수 |
+| `GET /api/equipment/interfaces` | 설비별 통신 방식·마지막 측정값·오늘 정지시간 (운전 화면 카드) |
+| `GET /api/equipment/{id}` | 설비 한 대 |
+| `GET /api/equipment/{id}/interface` | 그 설비의 어댑터·전송방식·열린 정지구간 |
+| `GET /api/equipment/{id}/telemetry` | 그 설비의 측정값 시계열 |
+| `GET /api/equipment/{id}/downtime` | 그 설비의 정지 구간 |
+| `GET /api/kpis` | 수율·온라인 수·보류 수 |
+| `GET /api/line` | OLED/LCD 공정 경로 |
+| `GET /api/wip` | 공정별 재공, 카세트 위치 |
+| `GET /api/production` | 오늘 지시·완료·불량·보류·마감 한 줄 |
+| `GET /api/mes/board` | 생산 화면 한 번에 (지시·재공·설비·품질) |
+| `GET /api/analytics/oee` | 가동률·성능·품질·OEE + 계획시간 기준과 못 낸 이유 |
+| `GET /api/analytics/anomaly` | 측정값 이상 점수 (시그마). 읽기 전용 |
+| `GET /api/alarms` | 알람 목록 (`?unresolved_only=true`) |
+| `GET /api/events/recent` | 최근 이벤트 판정 기록 |
+| `GET /api/commands` | 내려간 명령 이력 |
+| `GET /api/stream` | SSE 실시간 갱신 |
+
+### 작업·유리 추적
+
+| API | 하는 일 |
+|---|---|
+| `GET /api/lots` / `GET /api/lots/{id}` | 작업 목록·상세 |
+| `GET /api/lots/{id}/slots` | 카세트 안 유리 한 칸씩의 상태 |
+| `GET /api/lots/{id}/traveler` | 작업의 공정 진행표 |
+| `GET /api/lots/{id}/history` | 작업의 전체 이력 |
+| `GET /api/lots/{id}/diagnosis` | 왜 멈췄는지 한 화면 진단 (화면의 `왜`) |
+| `GET /api/lots/{id}/dispatch` | 이 작업의 다음 공정·설비 (설비가 물어본다) |
+| `GET /api/panels/{id}/history` | 유리 한 장의 지나온 길 |
+| `GET /api/panels/{id}/dispatch` | 유리 한 장의 다음 공정 |
+| `GET /api/lab/export/{panel_id}` | 그 유리의 이벤트를 꺼내기 (재현용) |
+
+제어 경로는 하나뿐이다. `POST /api/commands` 를 지나지 않고 설비 상태를 바꾸는
+API는 없다. 분석 API는 전부 GET이다.

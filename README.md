@@ -241,7 +241,15 @@ python -m pytest -q        # 85건. Docker 없이 인메모리 SQLite로 돈다
 
 ```bash
 python scripts/demo_check.py --base http://127.0.0.1:8000   # 40개 항목
-python scripts/shoot_screens.py                             # 이 문서의 화면 다시 찍기
+```
+
+이 문서의 스크린샷도 스크립트로 다시 찍는다. 화면을 고치면 문서 이미지가 같이 갱신된다.
+서버 실행에는 필요 없는 도구라서 `requirements-dev.txt`로 분리했다.
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m playwright install chromium
+python scripts/shoot_screens.py --base http://127.0.0.1:8000
 ```
 
 ---
@@ -275,3 +283,6 @@ csharp_lessons/     C# 언어 연습 (라인과 무관)
 | [SQL_PRACTICE.md](SQL_PRACTICE.md) | 같은 질문을 ORM과 SQL로 각각 풀기 |
 | [analytics/oee/README.md](analytics/oee/README.md) | OEE 계산 근거와 기준값 출처 |
 | [analytics/anomaly/README.md](analytics/anomaly/README.md) | 이상 점수 규칙과 하지 않은 것 |
+| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | 만들면서 정한 순서와 판단 (작업 기록) |
+| [CSHARP_BEGINNER.md](CSHARP_BEGINNER.md) | C# 클라이언트를 처음 쓰며 정리한 메모 |
+| [ROADMAP.md](ROADMAP.md) | 작업 당시의 일정 계획 (기록용) |

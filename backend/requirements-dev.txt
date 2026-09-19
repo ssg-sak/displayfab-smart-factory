@@ -1,0 +1,5 @@
+# 서버를 돌리는 데는 필요 없다. 문서용 화면을 찍을 때만 쓴다.
+#   python -m pip install -r requirements-dev.txt
+#   python -m playwright install chromium
+#   python scripts/shoot_screens.py
+playwright==1.63.0

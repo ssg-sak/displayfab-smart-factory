@@ -1,7 +1,10 @@
 """README에 넣을 화면을 실제 서버에서 찍는다.
 
 화면을 고친 뒤 다시 찍으면 문서 이미지가 같이 갱신된다.
+서버를 돌리는 데는 필요 없는 도구라서 requirements.txt에 넣지 않았다.
 
+  python -m pip install -r requirements-dev.txt
+  python -m playwright install chromium
   python scripts/shoot_screens.py --base http://127.0.0.1:8000
 
 찍기 직전에 설비 생존신호를 한 번 보낸다. 안 보내면 10초 규칙에 걸려
