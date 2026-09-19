@@ -116,6 +116,9 @@ nav a.active { color: #d8d8d8; }
 }
 .fork {
   flex: 1 1 auto;
+  /* 레인이 flex-basis 0으로 높이를 나눠 갖는다. 부모가 flex-start면 기준 높이가
+     없어서 레인이 0으로 접히고 설비 카드가 잘린다. 여기서 높이를 확정한다. */
+  align-self: stretch;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -651,6 +654,8 @@ main.mes .kpis { margin: 0 0 12px; }
   border-radius: 6px;
 }
 .mini-chamber h3 { margin: 0 0 4px; font-size: 12px; }
+/* 상태와 알람 수를 두 줄로 나눈다. inline이면 "가동 중알람 1"로 붙어 버린다. */
+.mini-chamber span { display: block; font-size: 11px; line-height: 1.5; }
 .mini-line .belt { width: 12px; min-height: 40px; align-self: center; }
 @media (max-width: 1100px) {
   body.app { overflow: auto; }

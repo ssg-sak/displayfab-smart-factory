@@ -19,11 +19,13 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 FAILURES: list[str] = []
+CHECKED: list[str] = []
 
 
 def check(label: str, ok: bool, detail: str = "") -> None:
     mark = "OK  " if ok else "FAIL"
     print(f"[{mark}] {label}" + (f" : {detail}" if detail else ""))
+    CHECKED.append(label)
     if not ok:
         FAILURES.append(label)
 
@@ -191,9 +193,9 @@ def main() -> int:
     client.close()
     print()
     if FAILURES:
-        print(f"실패 {len(FAILURES)}건: " + ", ".join(FAILURES))
+        print(f"{len(CHECKED)}건 중 실패 {len(FAILURES)}건: " + ", ".join(FAILURES))
         return 1
-    print("시연 6단 전부 통과")
+    print(f"시연 6단 전부 통과 — {len(CHECKED)}건")
     return 0
 
 
