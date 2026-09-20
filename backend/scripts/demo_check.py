@@ -56,6 +56,9 @@ def main() -> int:
     client = httpx.Client(base_url=args.base, timeout=20.0)
 
     health = client.get("/api/health").json()
+    if health.get("demo_autopilot"):
+        print("자동 시연을 끈 별도 검증 서버에서 실행하세요. 자동 생존신호가 통신 끊김 검증을 방해합니다.")
+        return 2
     check("호스트 살아 있음", health.get("db") == "ok", f"db={health.get('db')}")
 
     # 1. 지시 넣고 돌리기
@@ -89,9 +92,13 @@ def main() -> int:
     order2 = client.post("/api/work-orders", json={"product_type": "OLED", "qty": 1}).json()
     glass = order2["panel_ids"][0]
     heartbeat(client, "PROC-01")
-    print("      ... 통신 끊김 대기 (12초)")
-    time.sleep(12)
-    eq = client.get("/api/equipment/PROC-01").json()
+    print("      ... 통신 끊김 대기 (최대 16초)")
+    deadline = time.monotonic() + 16
+    while True:
+        eq = client.get("/api/equipment/PROC-01").json()
+        if eq["connection_status"] == "OFFLINE" or time.monotonic() >= deadline:
+            break
+        time.sleep(0.5)
     check("끊긴 설비", eq["connection_status"] == "OFFLINE", eq["connection_status"])
     loss = client.get("/api/equipment/PROC-01/downtime").json()
     check(
@@ -99,6 +106,9 @@ def main() -> int:
         any(r["reason"] == "COMMUNICATION_LOSS" and not r["ended_at"] for r in loss),
         f"{len(loss)}건",
     )
+    # The UI rounds to 0.1 seconds. An immediate recovery after detection can
+    # legitimately display 0.0 even though a downtime record was created.
+    time.sleep(0.25)
     rejected = client.post(
         "/api/events",
         json={
@@ -132,7 +142,7 @@ def main() -> int:
 
     # 5. 검사 불량 → 보류 → 버리기
     fail = client.post("/api/lab/scenarios/oled_inspect_fail/run").json()
-    check("검사 불량 시연", bool(fail), "")
+    check("검사 불량 시연", fail.get("ok") is True, "")
     today = client.get("/api/production").json()
     check("보류가 화면에 뜸", bool(today["hold_lots"]), ", ".join(today["hold_lots"][:3]))
     check("왜 멈췄는지 보임", "보류" in today["blocked"], today["blocked"][:40])

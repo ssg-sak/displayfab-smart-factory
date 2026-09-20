@@ -694,3 +694,21 @@ main.mes .kpis { margin: 0 0 12px; }
   }
   .lane { flex-wrap: wrap; height: auto; }
 }
+
+/* 공개 시연 서버에서만 붙는 띠. 자동 운전이라는 사실을 화면에 적어둔다. */
+.demo-banner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 7px 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cfd6cf;
+  background: #17231b;
+  border-bottom: 1px solid #2f4a37;
+}
+.demo-banner b { color: #8fd6a4; font-size: 12px; }
+.demo-banner span { color: #9fa9a0; }
+.demo-banner a { color: #8fb6d6; }

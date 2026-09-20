@@ -1,0 +1,44 @@
+name: displayfab-demo
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: displayfab_demo
+      POSTGRES_PASSWORD: ${DISPLAYFAB_DEMO_DB_PASSWORD:?Set in .env.demo}
+      POSTGRES_DB: displayfab_demo
+    volumes:
+      - demo_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U displayfab_demo -d displayfab_demo"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    image: displayfab-demo:local
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${DISPLAYFAB_HTTP_PORT:-8098}:8000"
+    environment:
+      DISPLAYFAB_DATABASE_URL: postgresql+psycopg://displayfab_demo:${DISPLAYFAB_DEMO_DB_PASSWORD}@db:5432/displayfab_demo
+      DISPLAYFAB_DEMO_AUTOPILOT: ${DISPLAYFAB_DEMO_AUTOPILOT:-1}
+      DISPLAYFAB_DEMO_HEARTBEAT_SEC: "6"
+      DISPLAYFAB_DEMO_RUN_INTERVAL_SEC: "30"
+      DISPLAYFAB_DEMO_RESET_MINUTES: ${DISPLAYFAB_DEMO_RESET_MINUTES:-60}
+      DISPLAYFAB_WRITE_RATE_PER_MIN: "60"
+      DISPLAYFAB_ADMIN_TOKEN: ${DISPLAYFAB_ADMIN_TOKEN:?Set in .env.demo}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  demo_pgdata:

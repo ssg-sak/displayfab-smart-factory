@@ -372,6 +372,7 @@ class HealthOut(BaseModel):
     equipment_online: int
     equipment_offline: int
     open_alarms: int
+    demo_autopilot: bool = False
 
 
 class ReplayIn(BaseModel):

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.enums import ConnectionStatus
 from app.models import Alarm, Equipment
@@ -26,4 +27,5 @@ def health(db: Session = Depends(get_db)) -> HealthOut:
         equipment_online=online,
         equipment_offline=total - online,
         open_alarms=open_alarms,
+        demo_autopilot=settings.demo_autopilot,
     )

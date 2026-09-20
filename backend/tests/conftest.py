@@ -1,3 +1,12 @@
+"""테스트는 프로세스에 남은 공개 시연 환경변수를 읽지 않는다."""
+
+import os
+
+for _key in list(os.environ):
+    if _key.startswith("DISPLAYFAB_"):
+        os.environ.pop(_key, None)
+os.environ["DISPLAYFAB_TESTING"] = "1"
+
 from datetime import datetime, timedelta, timezone
 
 import pytest

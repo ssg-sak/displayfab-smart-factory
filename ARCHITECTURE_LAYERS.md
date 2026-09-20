@@ -198,6 +198,7 @@ FEEDBACK       Operator/MES → /api/commands → (미래) Adapter
 ```text
 P0  이 지도와 Adapter 계약을 유지. 기존 API 삭제 금지
     시연 전 `python scripts/demo_check.py` 로 6단 + 인터페이스 + OEE 를 한 번에 확인
+    공개 시연은 DISPLAYFAB_DEMO_AUTOPILOT=1 일 때만 서버가 설비 클라이언트를 대신한다
 P1  (완료) 운전 화면 통신방식 / 마지막 측정값 / 정지시간
     (완료) 돌리기 중 생존신호 유지 — 시뮬레이터가 5초마다 라인 전체 HEARTBEAT
 P2  실제 장비가 생겼을 때만 OPCUAAdapter / ModbusAdapter 실체. 시뮬레이터는 옆에 유지

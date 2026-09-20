@@ -1,0 +1,34 @@
+# Render 배포 설계도. 저장소를 연결하면 이 파일대로 웹 서비스가 만들어진다.
+# DB는 Neon(무료 PostgreSQL)을 쓰고, 접속 문자열만 Render 환경변수로 넣는다.
+services:
+  - type: web
+    name: displayfab-smart-factory
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      # Neon 접속 문자열. 값은 저장소에 두지 않고 Render 화면에서 넣는다.
+      # 형식: postgresql+psycopg://사용자:비밀번호@호스트/DB?sslmode=require
+      - key: DISPLAYFAB_DATABASE_URL
+        sync: false
+      # 설비 시뮬레이터가 없는 서버라서, 서버가 설비 보고를 대신 올린다.
+      - key: DISPLAYFAB_DEMO_AUTOPILOT
+        value: "1"
+      # 통신 끊김 판정이 10초라서 그보다 짧게 보낸다.
+      - key: DISPLAYFAB_DEMO_HEARTBEAT_SEC
+        value: "6"
+      - key: DISPLAYFAB_DEMO_RUN_INTERVAL_SEC
+        value: "30"
+      - key: DISPLAYFAB_DEMO_RESET_MINUTES
+        value: "60"
+      # 한 사람이 분당 쓰기 60번까지. 공개 주소 낙서 방지용.
+      - key: DISPLAYFAB_WRITE_RATE_PER_MIN
+        value: "60"
+      # 직접 초기화할 때 쓰는 열쇠. Render가 만들어준다.
+      - key: DISPLAYFAB_ADMIN_TOKEN
+        generateValue: true
+      - key: DISPLAYFAB_LOG_LEVEL
+        value: "INFO"

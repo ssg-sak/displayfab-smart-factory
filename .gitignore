@@ -14,7 +14,12 @@ bin/
 obj/
 *.user
 .env
+.env.demo
+.env.deploy
+artifacts/
 dist/
 .coverage
 htmlcov/
 *.log
+_banner_check*
+_deploycheck*

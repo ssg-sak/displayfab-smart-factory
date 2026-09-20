@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+import secrets
+
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models import Panel
 from app.schemas import ReplayIn
 from app.services.line_runner import run_work_order
+from app.services.maintenance import reset_demo_data
 from app.services.replay import export_panel_events, replay_events
 from app.services.scenarios import CATALOG, run_scenario
 
@@ -38,6 +42,20 @@ def post_run_order(work_order_id: str, db: Session = Depends(get_db)) -> dict:
     if not result.get("ok") and result.get("error", "").startswith("지시 없음"):
         raise HTTPException(status_code=404, detail=result["error"])
     return result
+
+
+@router.post("/reset")
+def post_reset(
+    db: Session = Depends(get_db),
+    x_admin_token: str | None = Header(default=None),
+) -> dict:
+    """공개 시연 데이터를 처음 상태로 되돌린다. 열쇠를 설정한 서버에만 있다."""
+
+    if not settings.admin_token:
+        raise HTTPException(status_code=404, detail="Not Found")
+    if not x_admin_token or not secrets.compare_digest(x_admin_token, settings.admin_token):
+        raise HTTPException(status_code=403, detail="X-Admin-Token이 다릅니다")
+    return reset_demo_data(db)
 
 
 @router.post("/replay")

@@ -1363,3 +1363,31 @@ async function refreshOee() {
     rowsEl.appendChild(tr);
   });
 }
+
+// 공개 시연 서버에서만 보이는 띠.
+// 설비 보고를 서버가 대신 올리고 있다는 사실을 화면에도 적어둔다.
+(function demoBanner() {
+  async function show() {
+    let health;
+    try {
+      health = await getJson("/api/health");
+    } catch (e) {
+      return;
+    }
+    if (!health.demo_autopilot) return;
+    if (document.querySelector(".demo-banner")) return;
+    const bar = document.createElement("div");
+    bar.className = "demo-banner";
+    bar.innerHTML =
+      "<b>공개 시연 서버</b>" +
+      "<span>설비가 없는 서버라서, 설비 보고를 서버가 대신 올립니다. 검증·알람·상태 판정은 평소 경로 그대로 돕니다.</span>" +
+      "<span>누구나 버튼을 눌러볼 수 있고, 1시간마다 데이터가 처음 상태로 돌아갑니다.</span>" +
+      '<a href="https://github.com/ssg-sak/displayfab-smart-factory" target="_blank" rel="noopener">소스 보기</a>';
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", show);
+  } else {
+    show();
+  }
+})();

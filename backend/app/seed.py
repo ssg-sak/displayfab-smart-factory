@@ -140,6 +140,12 @@ def seed_if_empty(db: Session) -> None:
     ensure_masters(db)
     if not empty:
         return
+    seed_sample_lots(db)
+
+
+def seed_sample_lots(db: Session) -> None:
+    """연습용 카세트 3개와 유리 15장. 초기화 후에도 이 상태로 돌아온다."""
+
     for lot_row in LOTS:
         db.add(
             Lot(

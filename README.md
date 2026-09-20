@@ -9,6 +9,10 @@
 **설비는 가상이다. 실제 PLC 케이블은 없다.** 그래서 PLC·OPC UA·Modbus 통신을
 있는 것처럼 구현하지 않았다. 자리만 열어 두고 미구현이라고 적어 뒀다.
 
+**시연 모드:** 서버가 설비 클라이언트 역할을 대신한다. 버튼을 직접 눌러볼 수 있고,
+1시간마다 데이터가 처음 상태로 돌아간다. Docker·PostgreSQL 실행과 검증을 마쳤으며,
+인터넷 공개 주소는 아직 발급 전이다. [배포·실행 안내](docs/DEPLOYMENT.md)
+
 ![운전 화면](docs/images/ops-console.png)
 
 > 운전 화면. 왼쪽부터 투입 → (초록) 올레드 라인: 세정·증착 1·2호기·봉지 →
@@ -63,7 +67,7 @@ python -m uvicorn app.main:app --reload --port 8000
 `엘시디 1장`은 다른 공정 경로(배향막 → 셀 공정)를 타고, `조건 틀림`은 설비에 걸린 조건과
 다른 조건으로 보고해서 거절되는 걸 보여 준다.
 
-화면을 누르는 대신 API로 같은 6단을 한 번에 확인할 수도 있다. 40개 항목을 검사한다.
+화면을 누르는 대신 API로 같은 6단을 한 번에 확인할 수도 있다. 41개 항목을 검사한다.
 
 ```bash
 cd backend
@@ -86,6 +90,37 @@ dotnet run -- --run-line
 ```bash
 docker compose down -v && docker compose up -d
 ```
+
+---
+
+## 공개 시연 서버
+
+로컬은 사람이 시뮬레이터를 켠다. 공개 주소에는 그 시뮬레이터가 없으니, 서버가
+설비 클라이언트 역할을 대신한다. 수집·검증·알람 경로는 로컬과 같다.
+
+구성:
+
+- 웹: Render, Docker 이미지 하나 (API + 화면)
+- DB: Neon PostgreSQL (접속 문자열만 환경변수)
+- 자동 운전: 6초마다 생존신호, 30초마다 유리 한 장, 1시간마다 초기화
+- 쓰기 분당 60건 제한. 누구나 버튼을 눌러볼 수 있게 열어 두되 낙서는 막는다
+
+배포 파일은 저장소 루트의 `Dockerfile` 과 `render.yaml` 이다.
+
+로컬 Docker 시연 서버와 공개 배포·검증 절차는 [배포 운영 문서](docs/DEPLOYMENT.md)에 정리했다.
+
+[이 저장소를 Render에 배포](https://render.com/deploy?repo=https://github.com/ssg-sak/displayfab-smart-factory)
+
+```bash
+# 1) Neon에서 PostgreSQL을 만들고 접속 문자열을 받는다
+#    postgresql://사용자:비밀번호@호스트/DB?sslmode=require
+# 2) Render Dashboard → New → Blueprint
+#    이 저장소를 연결하면 render.yaml 대로 웹 서비스가 생긴다
+# 3) DISPLAYFAB_DATABASE_URL 에 Neon 문자열을 넣는다 (postgresql:// 그대로 넣어도 된다)
+```
+
+무료 웹 서비스는 15분 동안 요청이 없으면 잠든다. 처음 열 때 수십 초가 걸릴 수 있다.
+잠든 동안에도 DB는 남아 있고, 깨어나면 자동 운전이 다시 생존신호를 올린다.
 
 ---
 
@@ -199,11 +234,16 @@ OEE의 계획가동시간은 현장 교대표가 없어서 "오늘 첫 설비 �
 OEE와 이상 점수는 숫자만 낸다. 알람을 낼지, 설비를 세울지는 사람이나 MES가 정한다.
 제어 경로는 하나다: `사람 → POST /api/commands → 어댑터 → 설비`.
 
-**생존신호는 설비가 보낸다. 호스트가 대신 보내지 않는다.**
+**생존신호는 설비가 보낸다. 호스트가 DB를 직접 고쳐서 살리지 않는다.**
 라인 실행이 10초를 넘기면 그 사이 조용한 설비가 끊김으로 빠지는 문제가 있었다.
-호스트가 대신 생존신호를 만들면 쉽게 해결되지만, 그러면 "줄 끊기" 시연이
+호스트가 마지막 보고 시각만 고치면 쉽게 해결되지만, 그러면 "줄 끊기" 시연이
 더 이상 진짜로 깨지지 않는다. 그래서 시뮬레이터가 실행 중에도 5초마다
 라인 전체의 생존신호를 보내도록 고쳤다.
+
+공개 시연 서버에는 그 시뮬레이터가 없다. 그래서 그 서버에서만
+`DISPLAYFAB_DEMO_AUTOPILOT=1` 로 서버가 설비 클라이언트 역할을 대신한다.
+측정값을 DB에 직접 쓰지 않고, 화면의 `돌리기`와 같은 수집 경로를 탄다.
+로컬 기본값은 꺼져 있다.
 
 ---
 
@@ -230,7 +270,7 @@ OEE와 이상 점수는 숫자만 낸다. 알람을 낼지, 설비를 세울지�
 
 ```bash
 cd backend
-python -m pytest -q        # 85건. Docker 없이 인메모리 SQLite로 돈다
+python -m pytest -q        # 98건. Docker 없이 인메모리 SQLite로 돈다
 ```
 
 이벤트 한 건이 상태와 알람까지 제대로 바꾸는지, 잘못된 이벤트가 제대로 거절되는지를
@@ -240,7 +280,7 @@ python -m pytest -q        # 85건. Docker 없이 인메모리 SQLite로 돈다
 실제 서버에 대고 시연 전체를 확인하는 스크립트도 있다.
 
 ```bash
-python scripts/demo_check.py --base http://127.0.0.1:8000   # 40개 항목
+python scripts/demo_check.py --base http://127.0.0.1:8000   # 41개 항목
 ```
 
 이 문서의 스크린샷도 스크립트로 다시 찍는다. 화면을 고치면 문서 이미지가 같이 갱신된다.
@@ -262,7 +302,7 @@ backend/            FastAPI 호스트
   app/services/     수집·검증·알람·MES·OEE·이상점수
   app/adapters/     설비 통신 어댑터 (시뮬레이터 실체 / OPC UA·Modbus 미구현)
   app/domain/       공정 경로와 인터록 규칙
-  tests/            pytest 85건
+  tests/            pytest 98건
   scripts/          시연 검증, 화면 촬영
 simulator/          Python 설비 시뮬레이터
 csharp_simulator/   C# 설비 클라이언트 (.NET 8)
