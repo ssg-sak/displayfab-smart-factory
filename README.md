@@ -9,9 +9,10 @@
 **설비는 가상이다. 실제 PLC 케이블은 없다.** 그래서 PLC·OPC UA·Modbus 통신을
 있는 것처럼 구현하지 않았다. 자리만 열어 두고 미구현이라고 적어 뒀다.
 
-**시연 모드:** 서버가 설비 클라이언트 역할을 대신한다. 버튼을 직접 눌러볼 수 있고,
-1시간마다 데이터가 처음 상태로 돌아간다. Docker·PostgreSQL 실행과 검증을 마쳤으며,
-인터넷 공개 주소는 아직 발급 전이다. [배포·실행 안내](docs/DEPLOYMENT.md)
+**[공개 시연 바로가기 → DisplayFab](https://displayfab-smart-factory.onrender.com)**
+
+서버가 설비 클라이언트 역할을 대신한다. 버튼을 직접 눌러볼 수 있고,
+1시간마다 데이터가 처음 상태로 돌아간다. [배포·실행 안내](docs/DEPLOYMENT.md)
 
 ![운전 화면](docs/images/ops-console.png)
 
@@ -94,6 +95,8 @@ docker compose down -v && docker compose up -d
 ---
 
 ## 공개 시연 서버
+
+**접속 주소:** https://displayfab-smart-factory.onrender.com
 
 로컬은 사람이 시뮬레이터를 켠다. 공개 주소에는 그 시뮬레이터가 없으니, 서버가
 설비 클라이언트 역할을 대신한다. 수집·검증·알람 경로는 로컬과 같다.

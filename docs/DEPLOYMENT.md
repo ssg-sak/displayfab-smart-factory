@@ -29,6 +29,8 @@ docker compose --env-file .env.demo -f compose.demo.yml up -d --build --wait
 
 ## Render + Neon 공개 배포
 
+현재 공개 시연: https://displayfab-smart-factory.onrender.com
+
 1. [Neon 콘솔](https://console.neon.tech)에서 가입하고 **시연 전용 프로젝트·DB**를 만든다.
    프로젝트 이름은 `displayfab-demo`로 정한다. Connect에서 SSL 접속 문자열을 복사한다.
    기존 개발 DB와 공유하지 않는다.
@@ -86,4 +88,6 @@ python backend/scripts/check_deployment.py --base http://127.0.0.1:8097 --exerci
 - 관리자 토큰 없는 초기화는 403, 요청 상한 초과는 429와 Retry-After 반환. 읽기 health API는 200 유지.
 - Edge 헤드리스 브라우저: 운전·생산·작업·알람·이력 5개 화면 200, 시연 배너 표시, JavaScript 오류 0건.
 - 최종 로컬 설정: 8098 포트, 별도 시연 DB, 자동 시연 활성화, 초기화 간격 60분, 앱·DB 컨테이너 healthy.
-- Render·Neon 클라우드 배포 및 공개 HTTPS 검증은 계정/DB 설정 후 별도로 진행한다.
+- 2026-09-21 공개 HTTPS 검증: `https://displayfab-smart-factory.onrender.com`의 화면·정적 파일·OpenAPI 정상 응답.
+  `/api/health`에서 `status=ok`, `db=ok`, `demo_autopilot=true`, 설비 8대 ONLINE 확인.
+  공개 서버 검증은 읽기 전용으로 수행했으며, 시연 데이터 초기화나 쓰기 부하 검증은 하지 않았다.
